@@ -8,7 +8,7 @@ class WebPageNode:
         """
 
         self.tag_ = tag
-        self.attrs_ = attrs
+        self.attrs_ = dict(attrs)
         
         self.nodes_ = list()
         self.data_ = None
@@ -78,8 +78,6 @@ class WebPageNode:
                 else:
                     attrs[attr_in_query[0]] = None
             
-            print tag
-            print attrs
             query_elts.append({"tag": tag, "attrs": attrs})
         return query_elts
     
