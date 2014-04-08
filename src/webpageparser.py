@@ -116,7 +116,10 @@ class WebPageNode:
             elif params["type"] == "~": # contains the word
                 if not obj_attr.startswith(params["value"]) and not obj_attr.endswith(params["value"]) and " %s " % params["value"] not in obj_attr:
                     return False
-            elif params["type"] == "|" or params["type"] == "^": # starts with
+            elif params["type"] == "|": # starts with value- or equals value
+                if not obj_attr.startswith(params["value"] + "-") and obj_attr != params["value"]:
+                    return False
+            elif params["type"] == "^": # starts with
                 if not obj_attr.startswith(params["value"]):
                     return False
             elif params["type"] == "$": # ends with
