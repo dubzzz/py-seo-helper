@@ -28,7 +28,7 @@ class WebPageNode:
         Convert CSS selector to a list of subqueries
         cf. CSS Selectors: http://www.w3schools.com/cssref/css_selectors.asp
 
-        CSS selectors which not implemented:
+        CSS selectors which are not implemented:
         + :......
         + elt1 , elt2
         + elt1 > elt2
@@ -131,8 +131,6 @@ class WebPageNode:
         
         return True
 
-
-
     def find_(self, query, position_in_query=0):
         """
         Return the WebPageNode(s) that fit the query
@@ -146,21 +144,27 @@ class WebPageNode:
         if len(query[position_in_query]) == 0:
             return self.find_(query, position_in_query+1)
         
+        nodes_with_tag = list()
+        
         # Does this node fit the requirements for query[position_in_query]?
         query_elt = query[position_in_query]
         fit = self.is_fit_query(query_elt)
         if fit:
-            position_in_query += 1
-            if len(query) <= position_in_query:
-                return [self]
+            if len(query) == position_in_query +1:
+                nodes_with_tag.append(self)
         
         # Check remaining elements
-        nodes_with_tag = list()
         for node in self.nodes_:
-            nodes_with_tag_n = node.find_(query, position_in_query)
+            if fit:
+                if len(query) == position_in_query +1:
+                    nodes_with_tag_n = node.find_(query, position_in_query)
+                else:
+                    nodes_with_tag_n = node.find_(query, position_in_query+1)
+            else:
+                nodes_with_tag_n = node.find_(query, position_in_query)
             if len(nodes_with_tag_n) > 0:
                 nodes_with_tag += nodes_with_tag_n
-
+        
         return nodes_with_tag
     
     def find(self, query):
