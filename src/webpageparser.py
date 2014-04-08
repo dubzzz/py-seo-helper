@@ -43,7 +43,7 @@ class WebPageNode:
         regex_tag = re.compile(r'^([^\.\[\]#]*)')
         regex_id = re.compile(r'#([^\.\[\]#]*)')
         regex_class = re.compile(r'\.([^\.\[\]#]*)')
-        regex_attr = re.compile(r'\[([^\.\[\]#=\*~\|\^$]*)([\*~\|\^$]="([^"]*)"|[\*~\|\^$]=\'([^\']*)\'|[\*~\|\^$]=([^\]]+)|)\]') 
+        regex_attr = re.compile(r'\[([^\.\[\]#=\*~\|\^$]*)([\*~\|\^$]?="([^"]*)"|[\*~\|\^$]?=\'([^\']*)\'|[\*~\|\^$]?=([^\]]+)|)\]') 
         
         query_elts = list()
         query_raw_elts = css_selector_query.split(' ');
@@ -78,6 +78,8 @@ class WebPageNode:
                 else:
                     attrs[attr_in_query[0]] = None
             
+            print tag
+            print attrs
             query_elts.append({"tag": tag, "attrs": attrs})
         return query_elts
     
