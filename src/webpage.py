@@ -38,8 +38,10 @@ class WebPage:
         self.link_towards_int = list()
 
         try:
-            webpage_head = requests.head(self.url)
+            webpage_head = requests.head(self.url, timeout=10)
         except requests.ConnectionError:
+            self.server_unreachable = True
+        except requests.exceptions.Timeout:
             self.server_unreachable = True
         
         # 200: OK
@@ -49,10 +51,14 @@ class WebPage:
             m = re.match(r'[a-zA-Z\.0-9-]+/[a-zA-Z\.0-9-]+', webpage_head.headers['content-type'])
             if m:
                 self.content_type = m.group(0)
-        self.content_length = webpage_head.headers['content-length']
-
+        try:
+            self.content_length = int(webpage_head.headers['content-length'])
+        except TypeError:
+            pass
+        except ValueError:
+            pass
         print "depth=%d, url=%s [%s][%d]" % (self.depth, self.url, self.content_type, self.status)
-
+        
         # Not a success
         # or external page
         if self.status != 200 or not self.internal or "text/html" not in self.content_type:
@@ -64,10 +70,16 @@ class WebPage:
             self.server_unreachable = True
         except requests.exceptions.Timeout:
             self.server_unreachable = True
-
+        
+        # Status can change when we run a get query
+        # eg. 500 status can be caused by a programming error that cancels the generation of the page
         self.status = webpage_query.status_code
         if self.status != 200:
             return
+        
+        # The best way to get the real value of content-length is to compute it from the data
+        # The value returned by a server during head/get query for non-static files is not good (except on custom configurations of Apache)
+        self.content_length = len(webpage_query.text)
         
         # Analyse the source code of the webpage
         # Look for other pages
