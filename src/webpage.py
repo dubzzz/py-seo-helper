@@ -1,7 +1,10 @@
 import requests
 import re
+from webpageparser import WebPageParser, WebPageNode
 
 class WebPage:
+    regex_url = re.compile(r'(?:http[s]?:/|)/(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+
     def __init__(self, url, depth=0, internal=True):
         """
         Initialise an instance of WebPage
@@ -17,6 +20,7 @@ class WebPage:
         self.link_towards_int = None
 
         self.server_unreachable = False
+        self.server_invalid_query = False
         self.status = None
         self.content_type = None
         self.content_length = None
@@ -43,12 +47,14 @@ class WebPage:
             self.server_unreachable = True
         except requests.exceptions.Timeout:
             self.server_unreachable = True
+        except requests.exceptions.InvalidSchema:
+            self.server_invalid_query = True
         
         # 200: OK
         # 301: moved permanently
         self.status = webpage_head.status_code
         if webpage_head.headers['content-type']:
-            m = re.match(r'[a-zA-Z\.0-9-]+/[a-zA-Z\.0-9-]+', webpage_head.headers['content-type'])
+            m = re.search(r'[a-zA-Z\.0-9-]+/[a-zA-Z\.0-9-]+', webpage_head.headers['content-type'])
             if m:
                 self.content_type = m.group(0)
         try:
@@ -70,6 +76,8 @@ class WebPage:
             self.server_unreachable = True
         except requests.exceptions.Timeout:
             self.server_unreachable = True
+        except requests.exceptions.InvalidSchema:
+            self.server_invalid_query = True
         
         # Status can change when we run a get query
         # eg. 500 status can be caused by a programming error that cancels the generation of the page
@@ -83,11 +91,21 @@ class WebPage:
         
         # Analyse the source code of the webpage
         # Look for other pages
-        links = re.findall(r'<a[^>]+href="(?P<url>(?:http[s]?://|/)(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)"[^>]*>', webpage_query.text)
-        for link in links:
-            wp = website.retrieve_webpage(self, link)
-            if wp.internal:
-                self.link_towards_int.append(wp)
-            else:
-                self.link_towards_ext.append(wp)
+        webpageparser = WebPageParser()
+        webpageparser.feed(webpage_query.text)
+        nodes_a = webpageparser.find_firsts_with_tag("a")
+        for node in nodes_a:
+            try:
+                node_attrs = node.get_attrs()
+                
+                url = node_attrs["href"]
+                m_url = WebPage.regex_url.match(url)
+                if m_url:
+                    wp = website.retrieve_webpage(self, url)
+                    if wp.internal:
+                        self.link_towards_int.append(wp)
+                    else:
+                        self.link_towards_ext.append(wp)
+            except KeyError:
+                pass
 
