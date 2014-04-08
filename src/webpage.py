@@ -40,16 +40,19 @@ class WebPage:
         
         self.link_towards_ext = list()
         self.link_towards_int = list()
-
+        
         try:
             webpage_head = requests.head(self.url, timeout=10)
         except requests.ConnectionError:
             self.server_unreachable = True
+            return
         except requests.exceptions.Timeout:
             self.server_unreachable = True
+            return
         except requests.exceptions.InvalidSchema:
             self.server_invalid_query = True
-        
+            return
+         
         # 200: OK
         # 301: moved permanently
         self.status = webpage_head.status_code
@@ -74,10 +77,13 @@ class WebPage:
             webpage_query = requests.get(self.url, timeout=10)
         except requests.ConnectionError:
             self.server_unreachable = True
+            return
         except requests.exceptions.Timeout:
             self.server_unreachable = True
+            return
         except requests.exceptions.InvalidSchema:
             self.server_invalid_query = True
+            return
         
         # Status can change when we run a get query
         # eg. 500 status can be caused by a programming error that cancels the generation of the page
@@ -93,7 +99,7 @@ class WebPage:
         # Look for other pages
         webpageparser = WebPageParser()
         webpageparser.feed(webpage_query.text)
-        nodes_a = webpageparser.find_firsts_with_tag("a")
+        nodes_a = webpageparser.find("a")
         for node in nodes_a:
             try:
                 node_attrs = node.get_attrs()
