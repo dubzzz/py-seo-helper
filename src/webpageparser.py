@@ -2,6 +2,9 @@ import re
 from HTMLParser import HTMLParser
 
 class WebPageNode:
+    previous_results = dict()
+    regex_remove_useless_spaces = re.compile(r'\s*([^\s].*[^\s])\s*') # works iff useful value has at least 2 characters, otherwise no effect
+    
     def __init__(self, tag, attrs, parent=None):
         """
         Initialise a WebPageNode object
@@ -44,6 +47,20 @@ class WebPageNode:
 
     def set_data(self, data):
         self.data_ = data
+    
+    @staticmethod
+    def free_selector():
+        """
+        Delete css_selector_to_query_elts's previous results
+
+        css_selector_to_query_elts's results are kept into the static variable
+        WebPageNode.previous_results under the key value "css-selector"
+
+        each call to css_selector_to_query_elts() stores its corresponding result
+        into previous_results
+        """
+
+        del WebPageNode.previous_results["css-selector"]
 
     @staticmethod
     def css_selector_to_query_elts(css_selector_query):
@@ -68,6 +85,20 @@ class WebPageNode:
             css_selector_queries = css_selector_query.split(",")
             return [WebPageNode.css_selector_to_query_elts(css) for css in css_selector_queries]
         
+        # Remove in-front and trailing spaces
+        css_selector_query = WebPageNode.regex_remove_useless_spaces.sub('\g<1>', css_selector_query)
+
+        # Try to find the query in the values that have already been computed
+        try:
+            WebPageNode.previous_results["css-selector"]
+        except KeyError:
+            WebPageNode.previous_results["css-selector"] = dict()
+        try:
+            if WebPageNode.previous_results["css-selector"][css_selector_query]:
+                return WebPageNode.previous_results["css-selector"][css_selector_query]
+        except KeyError:
+            pass
+
         regex_tag = re.compile(r'^([^\.\[\]#]*)')
         regex_id = re.compile(r'#([^\.\[\]#]*)')
         regex_class = re.compile(r'\.([^\.\[\]#]*)')
@@ -110,6 +141,8 @@ class WebPageNode:
                     attrs[attr_in_query[0]] = None
             
             query_elts.append({"tag": tag, "attrs": attrs})
+        
+        WebPageNode.previous_results["css-selector"][css_selector_query] = query_elts
         return query_elts
     
     def is_fit_query(self, query_elt):
@@ -302,4 +335,7 @@ class WebPageParser(HTMLParser):
         for root_node in source_list:
             result += root_node.find(query_elts)
         return result
+    
+    def free_selector(self):
+        WebPageNode.free_selector()
 
