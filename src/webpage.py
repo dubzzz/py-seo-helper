@@ -24,7 +24,12 @@ class WebPage:
         self.status = None
         self.content_type = None
         self.content_length = None
+
+        self.check_dict = None
     
+    def get_url(self):
+        return self.url
+
     def add_link_from(self, from_wp):
         """
         A scanned webpage has a link towards this page
@@ -32,7 +37,7 @@ class WebPage:
 
         self.link_from.append(from_wp)
 
-    def scan(self, website):
+    def scan(self, website, seocheckmanager):
         """
         Scan the webpage
         looking for relationships with other pages
@@ -99,6 +104,9 @@ class WebPage:
         # Look for other pages
         webpageparser = WebPageParser()
         webpageparser.feed(webpage_query.text)
+
+        self.check_dict = seocheckmanager.generate_webpage_check_dict(webpageparser)
+
         nodes_a = webpageparser.find("a")
         for node in nodes_a:
             try:
@@ -114,4 +122,8 @@ class WebPage:
                         self.link_towards_ext.append(wp)
             except KeyError:
                 pass
+
+    def get_check_dict(self):
+        return self.check_dict
+
 
