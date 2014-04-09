@@ -18,10 +18,20 @@ class WebSite:
         self.root_url = m.group(0) # has / at the end
 
         self.seocheckmanager = SEOCheckManager()
+        # HEAD / TITLE
+        self.seocheckmanager.append(SEOCheckExist("html > head > title", None, "Missing <TITLE/>"))
+        self.seocheckmanager.append(SEOCheckLength("html > head > title", None, ">", 70, "Too long <TITLE/>"))
+        # HEAD / META[description]
         self.seocheckmanager.append(SEOCheckExist("html > head > meta[name=description]", "content", "Missing META for description"))
         self.seocheckmanager.append(SEOCheckLength("html > head > meta[name=description]", "content", "<", 50, "Too short META for description"))
         self.seocheckmanager.append(SEOCheckLength("html > head > meta[name=description]", "content", ">", 160, "Too long META for description"))
-        #self.seocheckmanager.append(SEOCheckLengthBetween("html > head > meta[name=description]", "content", 150, 160, "Recommended META for description: between 150 and 160"))
+        self.seocheckmanager.append(SEOCheckLengthBetween("html > head > meta[name=description]", "content", 150, 160, "Recommended META for description: between 150 and 160"))
+        # H1
+        self.seocheckmanager.append(SEOCheckExist("h1", None, "Missing <H1/>"))
+        # IMG
+        self.seocheckmanager.append(SEOCheckExist("img", "alt", "Missing ALT attribute for <IMG/>"))
+        self.seocheckmanager.append(SEOCheckLength("img", "alt", ">", 80, "Too long ALT attribute for <IMG/>"))
+        # I / B
         self.seocheckmanager.append(SEOCheckNotExist("i , b", "class", "(^| )(glyphicon)($| )", "Recommended: use <strong/> and <em/> instead of <i/> and <b/>"))
     
     def append(self, webpage):
