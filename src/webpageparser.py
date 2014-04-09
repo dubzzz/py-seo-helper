@@ -2,14 +2,15 @@ import re
 from HTMLParser import HTMLParser
 
 class WebPageNode:
-    def __init__(self, tag, attrs):
+    def __init__(self, tag, attrs, parent=None):
         """
         Initialise a WebPageNode object
         """
 
         self.tag_ = tag
         self.attrs_ = dict(attrs)
-        
+        self.parent_ = parent
+
         self.nodes_ = list()
         self.data_ = None
     
@@ -21,6 +22,25 @@ class WebPageNode:
     
     def get_data(self):
         return self.data_
+
+    def get_next_child(self, current):
+        found = False
+        for node in self.nodes_:
+            if found:
+                return node
+            if node == current:
+                found = True
+        return None
+    
+    def get_next_children(self, current):
+        found = False
+        nexts = list()
+        for node in self.nodes_:
+            if found:
+                nexts.append(node)
+            if node == current:
+                found = True
+        return nexts
 
     def set_data(self, data):
         self.data_ = data
@@ -34,8 +54,10 @@ class WebPageNode:
         CSS selectors which are not implemented:
         + :......
         + elt1 > elt2
-        + elt1 ~ elt2
+        
+        For the following CSS selectors, make sure to use space character
         + elt1 + elt2
+        + elt1 ~ elt2
 
         eg.: head meta[description]
         eg.: p.myclass
@@ -155,24 +177,55 @@ class WebPageNode:
         
         nodes_with_tag = list()
         
-        # Does this node fit the requirements for query[position_in_query]?
+        # Check if we are in a fit-or-fail case
+        # when we are starting with a + or ~ we can't afford to wait next node
+        fit_or_fail = False
         query_elt = query[position_in_query]
+        if query_elt["tag"] == "+" or query_elt["tag"] == "~":
+            fit_or_fail = True
+            position_in_query += 1
+            query_elt = query[position_in_query]
+
+            if len(query) <= position_in_query:
+                return []
+        
+        # Does this node fit the requirements for query[position_in_query]?
         fit = self.is_fit_query(query_elt)
+        next_is_fit_or_fail = False
         if fit:
             if len(query) == position_in_query +1:
                 nodes_with_tag.append(self)
+            elif query[position_in_query +1]["tag"] == "+" or query[position_in_query +1]["tag"] == "~":
+                next_is_fit_or_fail = True
         
-        # Check remaining elements
+        if fit_or_fail:
+            if not fit:
+                return []
+            elif len(query) == position_in_query +1:
+                return [self]
+        
+        # Check remaining elements (sisters and brothers)
+        if next_is_fit_or_fail:
+            if query[position_in_query +1]["tag"] == "+":
+                sb = self.parent_.get_next_child(self)
+                if sb:
+                    nodes_with_tag += sb.find_(query, position_in_query+1)
+            else:
+                sisters_brothers = self.parent_.get_next_children(self)
+                for sb in sisters_brothers:
+                    nodes_with_tag += sb.find_(query, position_in_query+1)
+
+        # Check remaining elements (children)
         for node in self.nodes_:
             if fit:
-                if len(query) == position_in_query +1:
+                if len(query) == position_in_query +1 or next_is_fit_or_fail:
                     nodes_with_tag_n = node.find_(query, position_in_query)
                 else:
                     nodes_with_tag_n = node.find_(query, position_in_query+1)
             else:
                 nodes_with_tag_n = node.find_(query, position_in_query)
-            if len(nodes_with_tag_n) > 0:
-                nodes_with_tag += nodes_with_tag_n
+            
+            nodes_with_tag += nodes_with_tag_n
         
         return nodes_with_tag
     
@@ -189,21 +242,21 @@ class WebPageNode:
 
         if len(query_elts) == 0:
             return list()
-
+        
         if isinstance(query_elts[0], list): # we have to deal with an union of queries
             output = list()
             for q in query_elts:
                 output = list(set(output + self.find_(q)))
             return output
         else:
-            return self.find_(query_elts)
+            return list(set(self.find_(query_elts)))
 
     def append_child(self, tag, attrs):
         """
         Append a child to that node
         """
         
-        node = WebPageNode(tag, attrs)
+        node = WebPageNode(tag, attrs, self)
         self.nodes_.append(node)
         return node
 

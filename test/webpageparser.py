@@ -20,6 +20,7 @@ htmlpage = """<html>
         <div id="elt-1" class="elt">This is 1</div>
         <div id="elt-2" class="elt">This is 2</div>
         <div id="elt-3" class="elt">This is 3</div>
+        <span data-whoiam="I am a span"></span>
     </div>
     <div class="footer"></div>
 </body>
@@ -47,15 +48,25 @@ check_list = [
     ("div #elt-1", None, None, 1),
     (".footer", None, None, 1),
     ("div.header", None, None, 1),
-    ("html * .container *", None, None, 3),
+    ("html * .container *", None, None, 4),
 # Wildcard
     (".header *", None, None, 2),
     ("div.header *", None, None, 2),
-    ("* * * *", None, None, 5),
+    ("* * * *", None, None, 6),
 # element , element
     ("h1 , div", None, None, 7),
     ("#elt-1 , html body [class^=cont] .elt[id$=2]", "class", "elt", 2),
     ("head [name=keywords] , meta[content='keyword test page']", None, None, 1),
+# element + element
+    ("img + h1", None, "Test Page", 1),
+    ("div + div", None, None, 4),
+    ("div.elt + .elt + div", "id", "elt-3", 1),
+    ("#elt-1 + #elt-3", None, None, 0),
+# element ~ element
+    ("img ~ h1", None, "Test Page", 1),
+    ("div ~ div", None, None, 4),
+    ("div.elt ~ .elt ~ div", "id", "elt-3", 1),
+    ("#elt-1 ~ #elt-3", None, None, 1),
 ]
 
 wp = WebPageParser()
