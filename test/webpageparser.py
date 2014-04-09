@@ -8,6 +8,7 @@ from webpageparser import WebPageParser, WebPageNode
 htmlpage = """<html>
 <head>
     <title>A stupid title</title>
+    <META NAME="test" CONTENT="test" />
     <meta name="description" content="Test WebPageParser" />
     <meta name="keywords" content="keyword test page" />
 </head>
@@ -32,10 +33,11 @@ check_list = [
     ("div", None, None, 6),
     ("html head title", None, "A stupid title", 1),
 # Custom attributes
-    ("[name]", None, None, 2),
-    ("head [name]", None, None, 2),
-    ("meta[name]", None, None, 2),
+    ("[name]", None, None, 3),
+    ("head [name]", None, None, 3),
+    ("meta[name]", None, None, 3),
     ("meta[name=description]", "content", "Test WebPageParser", 1),
+    ("meta[name=test]", "content", "test", 1),
     ("div[id^=elt]", "class", "elt", 3),
     ("div[id|=elt]", None, None, 3),
     ("div[id|=elt-]", None, None, 0),
