@@ -52,6 +52,10 @@ check_list = [
     (".header *", None, None, 2),
     ("div.header *", None, None, 2),
     ("* * * *", None, None, 5),
+# element , element
+    ("h1 , div", None, None, 7),
+    ("#elt-1 , html body [class^=cont] .elt[id$=2]", "class", "elt", 2),
+    ("head [name=keywords] , meta[content='keyword test page']", None, None, 1),
 ]
 
 wp = WebPageParser()

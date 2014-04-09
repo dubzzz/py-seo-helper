@@ -33,7 +33,6 @@ class WebPageNode:
 
         CSS selectors which are not implemented:
         + :......
-        + elt1 , elt2
         + elt1 > elt2
         + elt1 ~ elt2
         + elt1 + elt2
@@ -43,6 +42,10 @@ class WebPageNode:
         eg.: a[target=blank_]
         """
         
+        if ',' in css_selector_query:
+            css_selector_queries = css_selector_query.split(",")
+            return [WebPageNode.css_selector_to_query_elts(css) for css in css_selector_queries]
+        
         regex_tag = re.compile(r'^([^\.\[\]#]*)')
         regex_id = re.compile(r'#([^\.\[\]#]*)')
         regex_class = re.compile(r'\.([^\.\[\]#]*)')
@@ -51,6 +54,9 @@ class WebPageNode:
         query_elts = list()
         query_raw_elts = css_selector_query.split(' ');
         for raw_elt in query_raw_elts:
+            if len(raw_elt) == 0:
+                continue
+
             # Tag name
             m = regex_tag.search(raw_elt)
             if m:
@@ -177,9 +183,20 @@ class WebPageNode:
         """
 
         if isinstance(query, list):
-            return self.find_(query)
+            query_elts = query
         else:
-            return self.find_(WebPageNode.css_selector_to_query_elts(query))
+            query_elts = WebPageNode.css_selector_to_query_elts(query)
+
+        if len(query_elts) == 0:
+            return list()
+
+        if isinstance(query_elts[0], list): # we have to deal with an union of queries
+            output = list()
+            for q in query_elts:
+                output = list(set(output + self.find_(q)))
+            return output
+        else:
+            return self.find_(query_elts)
 
     def append_child(self, tag, attrs):
         """
