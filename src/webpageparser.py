@@ -208,6 +208,14 @@ class WebPageNode:
         if len(query[position_in_query]) == 0:
             return self.find_(query, position_in_query+1)
         
+        # Return [] if the value has already been computed and returned for this (node, position_in_query)
+        # ie. a query starting by '~' with this node
+        try:
+            if position_in_query in WebPageNode.previous_results["find-~"][self]:
+                return []
+        except KeyError:
+            pass
+
         nodes_with_tag = list()
         
         # Check if we are in a fit-or-fail case
@@ -215,6 +223,15 @@ class WebPageNode:
         fit_or_fail = False
         query_elt = query[position_in_query]
         if query_elt["tag"] == "+" or query_elt["tag"] == "~" or query_elt["tag"] == ">":
+            # Query starting by '~' with self
+            # For +/> it is not necessary because they are called only on one node
+            if query_elt["tag"] == "~":
+                try:
+                    WebPageNode.previous_results["find-~"][self]
+                except KeyError:
+                    WebPageNode.previous_results["find-~"][self] = list()
+                WebPageNode.previous_results["find-~"][self].append(position_in_query)
+            
             fit_or_fail = True
             position_in_query += 1
             query_elt = query[position_in_query]
@@ -276,13 +293,22 @@ class WebPageNode:
         if len(query_elts) == 0:
             return list()
         
+        # "Allocate" memory
+        WebPageNode.previous_results["find-~"] = dict()
+
         if isinstance(query_elts[0], list): # we have to deal with an union of queries
             output = list()
             for q in query_elts:
                 output = list(set(output + self.find_(q)))
-            return output
         else:
-            return list(set(self.find_(query_elts)))
+            output = list(set(self.find_(query_elts)))
+        
+        # Free allocated memory
+        for k in WebPageNode.previous_results.keys():
+            if k.startswith("find-"):
+                del WebPageNode.previous_results[k]
+
+        return output
 
     def append_child(self, tag, attrs):
         """
