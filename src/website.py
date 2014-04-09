@@ -18,6 +18,10 @@ class WebSite:
         self.root_url = m.group(0) # has / at the end
 
         self.seocheckmanager = SEOCheckManager()
+        # HTML
+        self.seocheckmanager.append(SEOCheckExist("html", "lang", "Missing LANG attribute for <HTML/>"))
+        # HEAD / LINK
+        self.seocheckmanager.append(SEOCheckExist("html > head > link[rel~=icon]", "href", "Missing FAVICON"))
         # HEAD / TITLE
         self.seocheckmanager.append(SEOCheckExist("html > head > title", None, "Missing <TITLE/>"))
         self.seocheckmanager.append(SEOCheckLength("html > head > title", None, ">", 70, "Too long <TITLE/>"))
@@ -26,11 +30,17 @@ class WebSite:
         self.seocheckmanager.append(SEOCheckLength("html > head > meta[name=description]", "content", "<", 50, "Too short META for description"))
         self.seocheckmanager.append(SEOCheckLength("html > head > meta[name=description]", "content", ">", 160, "Too long META for description"))
         self.seocheckmanager.append(SEOCheckLengthBetween("html > head > meta[name=description]", "content", 150, 160, "Recommended META for description: between 150 and 160"))
+        # HEAD / META[robots]
+        self.seocheckmanager.append(SEOCheckExist("html > head > meta[name=robots]", "content", "Missing META for robots"))
         # H1
         self.seocheckmanager.append(SEOCheckExist("h1", None, "Missing <H1/>"))
         # IMG
+        self.seocheckmanager.append(SEOCheckExist("img", "src", "Missing SRC attribute for <IMG/>"))
         self.seocheckmanager.append(SEOCheckExist("img", "alt", "Missing ALT attribute for <IMG/>"))
         self.seocheckmanager.append(SEOCheckLength("img", "alt", ">", 80, "Too long ALT attribute for <IMG/>"))
+        # A
+        self.seocheckmanager.append(SEOCheckExist("a", "href", "Missing HREF attribute for <A/>"))
+        self.seocheckmanager.append(SEOCheckExist("a[href^='/'] , a[href^='%s']" % self.root_url, None, "Missing visible/anchor text of <A/> (internal link)"))
         # I / B
         self.seocheckmanager.append(SEOCheckNotExist("i , b", "class", "(^| )(glyphicon)($| )", "Recommended: use <strong/> and <em/> instead of <i/> and <b/>"))
     

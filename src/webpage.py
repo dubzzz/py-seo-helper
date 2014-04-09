@@ -107,7 +107,7 @@ class WebPage:
 
         self.check_dict = seocheckmanager.generate_webpage_check_dict(webpageparser)
 
-        nodes_a = webpageparser.find("a")
+        nodes_a = webpageparser.find("a[href]")
         for node in nodes_a:
             try:
                 node_attrs = node.get_attrs()
