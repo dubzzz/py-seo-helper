@@ -15,9 +15,12 @@ class WebPageNode:
     
     def get_tags(self):
         return self.tags_
-
+    
     def get_attrs(self):
         return dict(self.attrs_)
+    
+    def get_data(self):
+        return self.data_
 
     def set_data(self, data):
         self.data_ = data
@@ -88,7 +91,7 @@ class WebPageNode:
         
         # Tag?
         try:
-            if query_elt["tag"] != "*" and self.tag_ != query_elt["tag"]:
+            if query_elt["tag"] and query_elt["tag"] != "*" and self.tag_ != query_elt["tag"]:
                 return False
         except KeyError: # Tag not specified
             pass
