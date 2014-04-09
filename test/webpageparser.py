@@ -67,6 +67,12 @@ check_list = [
     ("div ~ div", None, None, 4),
     ("div.elt ~ .elt ~ div", "id", "elt-3", 1),
     ("#elt-1 ~ #elt-3", None, None, 1),
+# element > element
+    ("img > h1", None, None, 0),
+    (".container > div", "class", "elt", 3),
+    ("html > head > .container > span", None, None, 0),
+    ("html > body > * > div", "class", "elt", 3),
+    ("html > * > * > span", "data-whoiam", "I am a span", 1),
 ]
 
 wp = WebPageParser()

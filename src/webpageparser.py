@@ -53,11 +53,11 @@ class WebPageNode:
 
         CSS selectors which are not implemented:
         + :......
-        + elt1 > elt2
         
         For the following CSS selectors, make sure to use space character
         + elt1 + elt2
         + elt1 ~ elt2
+        + elt1 > elt2
 
         eg.: head meta[description]
         eg.: p.myclass
@@ -181,7 +181,7 @@ class WebPageNode:
         # when we are starting with a + or ~ we can't afford to wait next node
         fit_or_fail = False
         query_elt = query[position_in_query]
-        if query_elt["tag"] == "+" or query_elt["tag"] == "~":
+        if query_elt["tag"] == "+" or query_elt["tag"] == "~" or query_elt["tag"] == ">":
             fit_or_fail = True
             position_in_query += 1
             query_elt = query[position_in_query]
@@ -191,12 +191,12 @@ class WebPageNode:
         
         # Does this node fit the requirements for query[position_in_query]?
         fit = self.is_fit_query(query_elt)
-        next_is_fit_or_fail = False
+        sb_is_fit_or_fail = False
         if fit:
             if len(query) == position_in_query +1:
                 nodes_with_tag.append(self)
             elif query[position_in_query +1]["tag"] == "+" or query[position_in_query +1]["tag"] == "~":
-                next_is_fit_or_fail = True
+                sb_is_fit_or_fail = True
         
         if fit_or_fail:
             if not fit:
@@ -205,12 +205,12 @@ class WebPageNode:
                 return [self]
         
         # Check remaining elements (sisters and brothers)
-        if next_is_fit_or_fail:
+        if sb_is_fit_or_fail:
             if query[position_in_query +1]["tag"] == "+":
                 sb = self.parent_.get_next_child(self)
                 if sb:
                     nodes_with_tag += sb.find_(query, position_in_query+1)
-            else:
+            elif query[position_in_query +1]["tag"] == "~":
                 sisters_brothers = self.parent_.get_next_children(self)
                 for sb in sisters_brothers:
                     nodes_with_tag += sb.find_(query, position_in_query+1)
@@ -218,7 +218,7 @@ class WebPageNode:
         # Check remaining elements (children)
         for node in self.nodes_:
             if fit:
-                if len(query) == position_in_query +1 or next_is_fit_or_fail:
+                if len(query) == position_in_query +1 or sb_is_fit_or_fail:
                     nodes_with_tag_n = node.find_(query, position_in_query)
                 else:
                     nodes_with_tag_n = node.find_(query, position_in_query+1)
