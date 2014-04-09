@@ -320,13 +320,23 @@ class WebPageNode:
         return node
 
 class WebPageParser(HTMLParser):
-    def __init__(self):
+    def __init__(self, case_sensitive=False):
         self.document_roots = list()
         self.stack_roots = list()
+        self.case_sensitive_ = case_sensitive
 
         HTMLParser.__init__(self)
     
     def handle_starttag(self, tag, attrs):
+        if not self.case_sensitive_:
+            tag = tag.lower()
+            for i in range(len(attrs)):
+                attr = list(attrs[i])
+                for j in range(len(attr)):
+                    if attrs[i][j]:
+                        attr[j] = attr[j].lower()
+                attrs[i] = attr
+        
         try:
             # Add this Node to its parent instance
             child = self.stack_roots[-1].append_child(tag, attrs)
@@ -352,6 +362,9 @@ class WebPageParser(HTMLParser):
         Return the WebPageNode(s) that fit the query
         """
         
+        if not self.case_sensitive_:
+            query = query.lower()
+
         query_elts = WebPageNode.css_selector_to_query_elts(query)
         
         if not source_list:
