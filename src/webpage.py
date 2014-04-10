@@ -182,24 +182,24 @@ class WebPage:
             node = nodes[0]
             title = node.get_data()
             if title:
-                title_digest = sha512(title).digest()
-                if title_digest in title_seen.keys():
+                title_digest = sha512(title.encode('utf-8')).digest()
+                if title_digest in WebPage.titles_seen.keys():
                     self.duplicated_title = True
-                    title_seen[title_digest].duplicated_title = True
+                    WebPage.titles_seen[title_digest].duplicated_title = True
                 else:
-                    title_seen[title_digest] = self.id
+                    WebPage.titles_seen[title_digest] = self
 
         nodes = webpageparser.find("head > meta[name=description][content]")
         if len(nodes) >= 1:
             node = nodes[0]
             description = node.get_attrs()["content"]
             if description:
-                description_digest = sha512(description).digest()
-                if description_digest in description_seen.keys():
+                description_digest = sha512(description.encode('utf-8')).digest()
+                if description_digest in WebPage.descriptions_seen.keys():
                     self.duplicated_description = True
-                    description_seen[description_digest].duplicated_description = True
+                    WebPage.descriptions_seen[description_digest].duplicated_description = True
                 else:
-                    description_seen[description_digest] = self.id
+                    WebPage.descriptions_seen[description_digest] = self
 
     def get_check_dict(self):
         return self.check_dict
