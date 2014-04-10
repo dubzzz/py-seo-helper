@@ -17,8 +17,8 @@ class WebPageNode:
         self.nodes_ = list()
         self.data_ = None
     
-    def get_tags(self):
-        return self.tags_
+    def get_tag(self):
+        return self.tag_
     
     def get_attrs(self):
         return dict(self.attrs_)

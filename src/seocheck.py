@@ -2,7 +2,7 @@ import re
 from abc import abstractmethod
 
 class SEOCheck:
-    def __init__(self, css_selector, attr_name, label=None, description=None):
+    def __init__(self, css_selector, attr_name, title=None, description=None):
         """
         Constructor for SEOCheck
         
@@ -13,7 +13,7 @@ class SEOCheck:
         self.css_selector_ = css_selector
         self.attr_name_ = attr_name
 
-        self.label_ = label
+        self.title_ = title
         self.description_ = description
     
     def get_css_selector(self):
@@ -22,8 +22,8 @@ class SEOCheck:
     def get_attr_name(self):
         return self.attr_name_
     
-    def get_label(self):
-        return self.label_
+    def get_title(self):
+        return self.title_
 
     def get_description(self):
         return self.description_

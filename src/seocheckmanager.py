@@ -5,12 +5,12 @@ class SEOCheckManager:
         self.check_list_ = list()
         self.selectors_attrs_ = dict()
 
-    def append(self, seocheck):
+    def append(self, seocheck, level=2):
         """
         Append SEOCheck object to the manager
         """
 
-        self.check_list_.append(seocheck)
+        self.check_list_.append((seocheck, level))
 
         try:
             self.selectors_attrs_[seocheck.get_css_selector()]
@@ -60,7 +60,8 @@ class SEOCheckManager:
         
         # SEOCheckNotExist is a special case, it requires the value of the field itself
         # iff regex_specific_value_
-        for check in self.check_list_:
+        for check_and_level in self.check_list_:
+            check = check_and_level[0]
             if isinstance(check, SEOCheckNotExist) and check.regex_specific_value_:
                 css_selector = check.get_css_selector()
                 attr = check.get_attr_name()
