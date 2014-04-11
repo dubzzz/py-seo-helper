@@ -1,3 +1,6 @@
+import os
+import cgi
+import subprocess
 from abc import abstractmethod, ABCMeta
 
 class OutputPrinter:
@@ -28,4 +31,72 @@ class StandardPrinter(OutputPrinter):
         print "\nPASSED TESTS:"
         for test in passed_tests:
             print "+ ", test.get_title()
+
+class PDFPrinter(OutputPrinter):
+    def __init__(self, root_url, filename):
+        OutputPrinter.__init__(self)
+        self.root_url_ = root_url
+        self.filename_ = filename
+
+    def render(self, webpages, failed_tests, passed_tests):
+        SRC_PATH = os.path.dirname(os.path.abspath(__file__))
+        BIN_PATH = os.path.join(SRC_PATH, "../bin/")
+        OUT_PATH = os.path.join(SRC_PATH, "../output/")
+        
+        HTML_PATH = os.path.join(OUT_PATH, "output.html")
+        WK_PATH = os.path.join(BIN_PATH, "wkhtmltopdf")
+        PDF_PATH = os.path.join(OUT_PATH, self.filename_)
+        with open(HTML_PATH, "w+") as f:
+            f.write('<!DOCTYPE html>')
+            f.write('<html><head>')
+            f.write("<link href='main.css' rel='stylesheet' type='text/css' />")
+            f.write('</head><body>')
+
+            f.write('<div class="pages">')
+            
+            f.write('<div class="page">')
+            f.write('<h1>SEO Helper</h1>')
+            f.write('<p class="links"><a href="%s">%s</a><br/><a href="https://github.com/dubzzz/py-seo-helper">GitHub of the project</a></p>' % (self.root_url_, self.root_url_))
+            f.write('</div>')
+
+            f.write('<div class="page">')
+            f.write('<h2>Scanned pages:</h2><ul>')
+            for wp in webpages:
+                content_type = wp.content_type
+                if not content_type:
+                    content_type = ""
+                f.write('<li><p>%s</p>' % cgi.escape(wp.url))
+                f.write('<p class="details">')
+                f.write('<span class="status">Status: <span data-value="%d">%d</span></span>' % (wp.status, wp.status))
+                f.write('<span class="depth">#clicks: <span data-value="%d">%d</span></span>' % (wp.depth, wp.depth))
+                f.write('<span class="content-type">Content-type: <span data-value="%s">%s</span></span>' % (cgi.escape(content_type, quote=True), cgi.escape(content_type)))
+                f.write('<span class="length">Length: <span data-value="%s">%s</span></span>' % (cgi.escape(wp.get_formatted_length(), quote=True), cgi.escape(wp.get_formatted_length())))
+                f.write('</p></li>')
+            f.write('</ul>')
+            f.write('</div>')
+
+            f.write('<div class="page">')
+            f.write('<h2>Improvements:</h2>')
+            for test in failed_tests:
+                f.write('<h3><span class="severity">[<span class="level%d">%s</span>]</span> %s</h3>' % (test.get_level(), cgi.escape(test.get_level_str()), cgi.escape(test.get_title())))
+                f.write('<p class="description">%s</p>' % cgi.escape(test.get_description()))
+                f.write('<ul>')
+                for wp in test.get_failures():
+                    f.write('<li>%s</li>' % cgi.escape(wp.url))
+                f.write('</ul>')
+            f.write('</div>')
+            
+            f.write('<div class="page">')
+            f.write('<h2>Passed tests:</h2><ul>')
+            for test in passed_tests:
+                f.write('<li><span class="severity">[<span class="level%d">%s</span>]</span> %s</li>' % (test.get_level(), cgi.escape(test.get_level_str()), cgi.escape(test.get_title())))
+            f.write('</ul>')
+            f.write('</div>')
+            
+            f.write('</div>')
+
+            f.write('</body></html>')
+        
+        sp_wk = subprocess.Popen([WK_PATH, "--page-size", "A4", "--margin-left", "10mm", "--margin-right", "10mm", "--margin-top", "10mm", "--margin-bottom", "10mm", HTML_PATH, PDF_PATH])
+        sp_wk.wait()
 

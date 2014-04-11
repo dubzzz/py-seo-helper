@@ -1,0 +1,111 @@
+.page
+{
+	/*position: relative;*/
+	width: 800px;
+	/*height: 1778px;*/
+	page-break-after: always;
+}
+
+.page:last-child
+{
+	/*height: 1770px;*/
+	page-break-after: avoid;
+}
+
+h1
+{
+	text-align: center;
+	margin-top: 200px;
+	margin-bottom: 0px;
+}
+
+.links
+{
+	text-align: center;
+	/*page-break-after: always;*/
+}
+
+.level0
+{
+	color: red;
+}
+
+.level1
+{
+	color: orange;
+}
+
+.level2
+{
+	color: blue;
+}
+
+.level3
+{
+	color: green;
+}
+
+li p
+{
+	overflow-x: hidden;
+}
+
+li > p
+{
+	padding-top: 0px;
+	padding-bottom: 0px;
+	margin-top: 0px;
+	margin-bottom: 0px;
+}
+
+p.details > span
+{
+	font-size: 0.8em;
+	color: #777;
+
+	display: inline-block;
+	width: 20%;
+}
+
+p.details > span.content-type
+{
+	width: 39%;
+}
+
+p.details span.status [data-value="200"]
+{
+	color: green;
+}
+
+p.details span.status [data-value^="4"]
+{
+	color: red;
+}
+
+p.details span.status [data-value^="3"]
+{
+	color: blue;
+}
+
+h3
+{
+	margin-bottom: 0px;
+}
+
+.description
+{
+	color: #777;
+	margin-top: 0px;
+}
+
+h3 span.severity
+{
+	display: inline-block;
+	min-width: 90px;
+}
+
+li span.severity
+{
+	display: inline-block;
+	min-width: 70px;
+}

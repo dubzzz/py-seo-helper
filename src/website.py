@@ -3,7 +3,7 @@ import requests
 from webpage import WebPage
 from seocheck import SEOCheckExist, SEOCheckNotExist, SEOCheckLength, SEOCheckLengthBetween
 from seocheckmanager import SEOCheckManager
-from outputprinter import StandardPrinter
+from outputprinter import StandardPrinter, PDFPrinter
 from test import Test
 
 class WebSite:
@@ -202,4 +202,7 @@ class WebSite:
         print ""
         sprinter = StandardPrinter()
         sprinter.render(self.webpages, failed_tests, passed_tests)
+        
+        pdfprinter = PDFPrinter(self.root_url, "pdf.pdf")
+        pdfprinter.render(self.webpages, failed_tests, passed_tests)
 

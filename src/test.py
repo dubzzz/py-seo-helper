@@ -20,10 +20,16 @@ class Test:
         self.passed_ = passed
     
     def get_title(self):
-        return self.title_
+        if self.title_:
+            return self.title_
+        else:
+            return ""
     
     def get_description(self):
-        return self.description_
+        if self.description_:
+            return self.description_
+        else:
+            return ""
 
     def get_level(self):
         return self.level_

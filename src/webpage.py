@@ -80,7 +80,7 @@ class WebPage:
             if self.status not in (200, 301, 302):
                 for wp in self.link_used_by:
                     wp.has_brokenlinks = True
-                for wp in self.link_used_by:
+                for wp in self.ressource_used_by:
                     wp.has_brokenressources = True
             return output
         return inner
