@@ -93,7 +93,7 @@ class WebSite:
             wp.add_link_used_by(from_wp)
         return wp
     
-    def scan(self, max_depth):
+    def scan(self, max_depth, email_address, nofollow, noindex, color):
         """
         Scan the WebSite in order to report abnormal or non-optimal
         coding choices
@@ -116,7 +116,7 @@ class WebSite:
         while cursor_webpages_pos < len(self.webpages) and self.webpages[cursor_webpages_pos].depth <= max_depth:
             # remove and return the head of the queue
             webpage = self.webpages[cursor_webpages_pos]
-            webpage.scan(self, self.seocheckmanager)
+            webpage.scan(self, self.seocheckmanager, noindex, nofollow)
             
             cursor_webpages_pos += 1
         
@@ -154,6 +154,10 @@ class WebSite:
         for webpage in self.webpages:
             if webpage.status not in (200, 301, 302):
                 t_brokenlinks.append(webpage)
+            
+            if noindex and webpage.noindex:
+                continue
+
             if webpage.has_brokenlinks:
                 t_brokenlinks_in.append(webpage)
             if webpage.has_brokenressources:
@@ -181,6 +185,9 @@ class WebSite:
 
             t_check = Test(check.get_title(), check.get_description(), level)
             for webpage in self.webpages:
+                if noindex and webpage.noindex:
+                    continue
+
                 check_dict = webpage.get_check_dict()
                 if not check_dict:
                     continue
@@ -200,9 +207,9 @@ class WebSite:
                 failed_tests.append(t)
         
         print ""
-        sprinter = StandardPrinter()
+        sprinter = StandardPrinter(color)
         sprinter.render(self.webpages, failed_tests, passed_tests)
         
-        pdfprinter = PDFPrinter(self.root_url, "pdf.pdf")
+        pdfprinter = PDFPrinter(self.root_url, "pdf.pdf", email_address)
         pdfprinter.render(self.webpages, failed_tests, passed_tests)
 

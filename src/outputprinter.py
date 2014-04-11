@@ -11,6 +11,10 @@ class OutputPrinter:
         pass
 
 class StandardPrinter(OutputPrinter):
+    def __init__(self, color=False):
+        OutputPrinter.__init__(self)
+        self.color_ = color
+    
     def render(self, webpages, failed_tests, passed_tests):
         print "WEBPAGES TESTED:\n"
         for wp in webpages:
@@ -33,10 +37,11 @@ class StandardPrinter(OutputPrinter):
             print "+ ", test.get_title()
 
 class PDFPrinter(OutputPrinter):
-    def __init__(self, root_url, filename):
+    def __init__(self, root_url, filename, email_address=None):
         OutputPrinter.__init__(self)
         self.root_url_ = root_url
         self.filename_ = filename
+        self.email_address_ = email_address
 
     def render(self, webpages, failed_tests, passed_tests):
         SRC_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -99,4 +104,10 @@ class PDFPrinter(OutputPrinter):
         
         sp_wk = subprocess.Popen([WK_PATH, "--page-size", "A4", "--margin-left", "10mm", "--margin-right", "10mm", "--margin-top", "10mm", "--margin-bottom", "10mm", HTML_PATH, PDF_PATH])
         sp_wk.wait()
+
+        if self.email_address_:
+            sp_echo = subprocess.Popen(["echo", "Please find attach the output"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            sp_mutt = subprocess.Popen(["mutt", "-s", "SEO Helper - output", "-a", PDF_PATH, "--", self.email_address_], stdin=sp_echo.stdout, stdout=subprocess.PIPE)
+            sp_echo.stdout.close()
+            sp_mutt.wait()
 

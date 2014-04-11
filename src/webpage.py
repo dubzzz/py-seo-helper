@@ -18,6 +18,7 @@ class WebPage:
         self.url = url
         self.depth = depth
         self.internal = internal
+        self.noindex = False
 
         self.link_used_by = list()
         self.ressource_used_by = list()
@@ -86,7 +87,7 @@ class WebPage:
         return inner
 
     @check_failures
-    def scan(self, website, seocheckmanager):
+    def scan(self, website, seocheckmanager, noindex, nofollow):
         """
         Scan the webpage
         looking for relationships with other pages
@@ -158,25 +159,6 @@ class WebPage:
         # SEOCheckManager
         self.check_dict = seocheckmanager.generate_webpage_check_dict(webpageparser)
         
-        # Look for other pages
-        nodes_a = webpageparser.find("a[href]")
-        for node in nodes_a:
-            try:
-                node_attrs = node.get_attrs()
-                
-                url = node_attrs["href"]
-                m_url = WebPage.regex_url.match(url)
-                if m_url:
-                    wp = website.retrieve_webpage(self, url)
-                    if wp.internal:
-                        self.link_towards_int.append(wp)
-                    else:
-                        self.link_towards_ext.append(wp)
-                    if wp.status and wp.status not in (200, 301, 302):
-                        self.has_brokenlinks = True
-            except KeyError:
-                pass
-        
         # Look for ressources
         nodes_ressources = webpageparser.find("script[src] , link[href] , img[src] , iframe[src] , object[data] , applet[code]")
         for node in nodes_ressources:
@@ -200,12 +182,49 @@ class WebPage:
                         self.has_brokenressources = True
             except KeyError:
                 pass
-
-        # title / description
         
+        # meta[name=robots]
+        nofollow_global = False
+        if nofollow:
+            nodes = webpageparser.find("meta[name=robots][content*=nofollow]")
+            if len(nodes) >= 1:
+                nofollow_global = True
+        
+        # Look for other pages
+        if not nofollow_global:
+            nodes_a = webpageparser.find("a[href]")
+            for node in nodes_a:
+                try:
+                    node_attrs = node.get_attrs()
+                    
+                    url = node_attrs["href"]
+                    try:
+                        nofollow_local = "nofollow" in node_attrs["rel"]
+                    except KeyError:
+                        nofollow_local = False
+
+                    if nofollow and nofollow_local:
+                        continue
+
+                    m_url = WebPage.regex_url.match(url)
+                    if m_url:
+                        wp = website.retrieve_webpage(self, url)
+                        if wp.internal:
+                            self.link_towards_int.append(wp)
+                        else:
+                            self.link_towards_ext.append(wp)
+                        if wp.status and wp.status not in (200, 301, 302):
+                            self.has_brokenlinks = True
+                except KeyError:
+                    pass
+        
+        # title / description
         nodes = webpageparser.find("head > meta[name=robots][content*=noindex]")
         if len(nodes) >= 1:
-            return
+            self.noindex = True
+            
+            if noindex:
+                return
 
         nodes = webpageparser.find("head > title")
         if len(nodes) >= 1:
@@ -230,8 +249,8 @@ class WebPage:
                     WebPage.descriptions_seen[description_digest].duplicated_description = True
                 else:
                     WebPage.descriptions_seen[description_digest] = self
+        
 
     def get_check_dict(self):
         return self.check_dict
-
 
