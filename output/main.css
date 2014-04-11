@@ -77,7 +77,7 @@ p.details span.status [data-value="200"]
 	color: green;
 }
 
-p.details span.status [data-value^="4"]
+p.details span.status [data-value^="4"] , p.details span.status [data-value^="5"]
 {
 	color: red;
 }

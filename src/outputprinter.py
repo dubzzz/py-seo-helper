@@ -21,12 +21,30 @@ class StandardPrinter(OutputPrinter):
             content_type = wp.content_type
             if not content_type:
                 content_type = ""
-            print "[%d] %s - %s - %s" % (wp.status, wp.url, wp.get_formatted_length(), content_type)
+            if not self.color_:
+                print "[%d] %s - %s - %s" % (wp.status, wp.url, wp.get_formatted_length(), content_type)
+            elif wp.status == 200:
+                print "[\033[92m%d\033[0m] %s - %s - %s" % (wp.status, wp.url, wp.get_formatted_length(), content_type)
+            elif wp.status >= 300 and wp.status < 400:
+                print "[\033[93m%d\033[0m] %s - %s - %s" % (wp.status, wp.url, wp.get_formatted_length(), content_type)
+            elif wp.status >= 400:
+                print "[\033[91m%d\033[0m] %s - %s - %s" % (wp.status, wp.url, wp.get_formatted_length(), content_type)
+            else:
+                print "[%d] %s - %s - %s" % (wp.status, wp.url, wp.get_formatted_length(), content_type)
         
         print "\nFAILED TESTS:\n"
         for test in failed_tests:
             print "\nName:     ", test.get_title()
-            print "Severity: ", test.get_level_str()
+            if not self.color_ or test.get_level() < 0 or test.get_level() >= 4:
+                print "Severity: ", test.get_level_str()
+            elif test.get_level() == 0:
+                print "Severity: \033[91m", test.get_level_str(), "\033[0m"
+            elif test.get_level() == 1:
+                print "Severity: \033[93m", test.get_level_str(), "\033[0m"
+            elif test.get_level() == 2:
+                print "Severity: \033[94m", test.get_level_str(), "\033[0m"
+            elif test.get_level() == 3:
+                print "Severity: \033[92m", test.get_level_str(), "\033[0m"
             print "Details:  ", test.get_description()
             print ""
             for wp in test.get_failures():
