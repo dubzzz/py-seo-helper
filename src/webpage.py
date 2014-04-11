@@ -31,7 +31,7 @@ class WebPage:
 
         self.server_unreachable = False
         self.server_invalid_query = False
-        self.status = None
+        self.status = 0
         self.content_type = None
         self.content_length = None
         
@@ -41,6 +41,23 @@ class WebPage:
     
     def get_url(self):
         return self.url
+
+    def get_formatted_length(self):
+        if not self.content_length:
+            return "N.A."
+        
+        unit = 0
+        length = self.content_length
+        while length >= 1024:
+            unit += 1
+            length /= 1024.
+
+        units = ["o", "ko", "Mo", "Go", "To"]
+        if unit >= len(units):
+            return "N.A."
+        if unit == 0:
+            return "%d%s" % (int(length), units[unit])
+        return "%d.%d%s" % (int(length), int((length*10.)%10), units[unit])
 
     def add_link_used_by(self, from_wp):
         """
@@ -55,7 +72,20 @@ class WebPage:
         """
 
         self.ressource_used_by.append(from_wp)
+    
+    def check_failures(func):
+        def inner(*args, **kwargs):
+            output = func(*args, **kwargs)
+            self = args[0]
+            if self.status not in (200, 301, 302):
+                for wp in self.link_used_by:
+                    wp.has_brokenlinks = True
+                for wp in self.link_used_by:
+                    wp.has_brokenressources = True
+            return output
+        return inner
 
+    @check_failures
     def scan(self, website, seocheckmanager):
         """
         Scan the webpage

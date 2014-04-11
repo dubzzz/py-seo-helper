@@ -79,7 +79,7 @@ class SEOCheckManager:
                 else:
                     for node in corresponding_nodes:
                         if node.get_data():
-                            values.append(len(node.get_data()))
+                            values.append(node.get_data())
                         else:
                             values.append(None)
                 

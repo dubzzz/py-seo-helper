@@ -1,7 +1,9 @@
 import re
-from abc import abstractmethod
+from abc import abstractmethod, ABCMeta
 
 class SEOCheck:
+    __metaclass__ = ABCMeta
+
     def __init__(self, css_selector, attr_name, title=None, description=None):
         """
         Constructor for SEOCheck
@@ -78,6 +80,7 @@ class SEOCheckNotExist(SEOCheck):
         if self.regex_specific_value_:
             if not webpage_check_dict_elt[0]: # attr not defined
                 return False
+            #print self.css_selector_, " - ", self.attr_name_, " - ", webpage_check_dict_elt[1], " - ", type(webpage_check_dict_elt[1])
             if len(self.regex_specific_value_.findall(webpage_check_dict_elt[1])) == 0: # attr != specific_value
                 return False
         else:

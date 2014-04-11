@@ -3,6 +3,7 @@ import requests
 from webpage import WebPage
 from seocheck import SEOCheckExist, SEOCheckNotExist, SEOCheckLength, SEOCheckLengthBetween
 from seocheckmanager import SEOCheckManager
+from outputprinter import StandardPrinter
 from test import Test
 
 class WebSite:
@@ -21,32 +22,32 @@ class WebSite:
 
         self.seocheckmanager = SEOCheckManager()
         # HTML
-        self.seocheckmanager.append(SEOCheckExist("html", "lang", "Missing LANG attribute for <HTML/>"), 1)
+        self.seocheckmanager.append(SEOCheckExist("html", "lang", "Missing LANG attribute for <HTML/>", "Setting this value can help you to get a better ranking based on the localization of the user who is using a search engine and the subdomain in use for this search engine. Results and positioning in google.com and google.co.uk are not the same"), 2)
         # HEAD / LINK
-        self.seocheckmanager.append(SEOCheckExist("html > head > link[rel~=icon]", "href", "Missing FAVICON"), 1)
+        self.seocheckmanager.append(SEOCheckExist("html > head > link[rel~=icon]", "href", "Missing FAVICON"), 3)
         # HEAD / TITLE
         self.seocheckmanager.append(SEOCheckExist("html > head > title", None, "Missing <TITLE/>"), 0)
-        self.seocheckmanager.append(SEOCheckLength("html > head > title", None, ">", 70, "Too long <TITLE/>"), 0)
+        self.seocheckmanager.append(SEOCheckLength("html > head > title", None, ">", 70, "Too long <TITLE/>"), 1)
         # HEAD / META[description]
         self.seocheckmanager.append(SEOCheckExist("html > head > meta[name=description]", "content", "Missing META for description"), 0)
-        self.seocheckmanager.append(SEOCheckLength("html > head > meta[name=description]", "content", "<", 50, "Too short META for description"), 0)
-        self.seocheckmanager.append(SEOCheckLength("html > head > meta[name=description]", "content", ">", 160, "Too long META for description"), 0)
-        self.seocheckmanager.append(SEOCheckLengthBetween("html > head > meta[name=description]", "content", 150, 160, "Recommended META for description: between 150 and 160"), 2)
+        self.seocheckmanager.append(SEOCheckLength("html > head > meta[name=description]", "content", "<", 50, "Too short META for description"), 1)
+        self.seocheckmanager.append(SEOCheckLength("html > head > meta[name=description]", "content", ">", 160, "Too long META for description"), 1)
+        self.seocheckmanager.append(SEOCheckLengthBetween("html > head > meta[name=description]", "content", 150, 160, "Recommended META for description: between 150 and 160"), 3)
         # HEAD / META[robots]
         self.seocheckmanager.append(SEOCheckExist("html > head > meta[name=robots]", "content", "Missing META for robots"), 1)
         # H1
         self.seocheckmanager.append(SEOCheckExist("h1", None, "Missing <H1/>"), 0)
         # IMG
-        self.seocheckmanager.append(SEOCheckExist("img", "src", "Missing SRC attribute for <IMG/>", "src attribute should be specified on every <img/>"), 0)
-        self.seocheckmanager.append(SEOCheckExist("img", "alt", "Missing ALT attribute for <IMG/>"), 0)
+        self.seocheckmanager.append(SEOCheckNotExist("img", "src", "(.+)", "Missing SRC attribute for <IMG/>", "src attribute should be specified on every <img/>"), 0)
+        self.seocheckmanager.append(SEOCheckNotExist("img", "alt", "(.+)", "Missing ALT attribute for <IMG/>"), 0)
         self.seocheckmanager.append(SEOCheckLength("img", "alt", ">", 80, "Too long ALT attribute for <IMG/>"), 2)
         # A
-        self.seocheckmanager.append(SEOCheckExist("a", "href", "Missing HREF attribute for <A/>", "<a/> links are used to create hyperlinks. href should be specified on every <a/> link"), 0)
-        self.seocheckmanager.append(SEOCheckExist("a[href^='/'] , a[href^='%s']" % self.root_url, None, "Missing visible/anchor text of <A/> (internal link)", "Anchor text of <a/> links is useful because it helps bots to understand what kind of page is targetted. It gives bots keywords that could be attributed to the webpage"), 2)
-        self.seocheckmanager.append(SEOCheckExist("a[href='#'][onclick]", None, "Use of <a href='#' />", "For my part, I prefer using <a href='javascript:void(0);' onclick='...' /> instead of <a href='#' onclick='...' />. <a href='#' /> makes the page scrolling up when clicked"), 2)
+        self.seocheckmanager.append(SEOCheckNotExist("a", "href", "(.+)", "Missing HREF attribute for <A/>", "<a/> links are used to create hyperlinks. href should be specified on every <a/> link"), 0)
+        self.seocheckmanager.append(SEOCheckNotExist("a[href^='/'] , a[href^='%s']" % self.root_url, None, "(.+)", "Missing visible/anchor text of <A/> (internal link)", "Anchor text of <a/> links is useful because it helps bots to understand what kind of page is targetted. It gives bots keywords that could be attributed to the webpage"), 2)
+        self.seocheckmanager.append(SEOCheckNotExist("a[href='#']", None, None, "Use of <a href='#' />", "For my part, I prefer using <a href='javascript:void(0);' onclick='...' /> instead of <a href='#' onclick='...' />. <a href='#' /> makes the page scrolling up when clicked"), 3)
         # APPLET / IFRAME
-        self.seocheckmanager.append(SEOCheckExist("applet", "code", "Missing CODE attribute for <APPLET/>"), 1)
-        self.seocheckmanager.append(SEOCheckExist("iframe", "src", "Missing SRC attribute for <IFRAME/>"), 1)
+        self.seocheckmanager.append(SEOCheckNotExist("applet", "code", "(.+)", "Missing CODE attribute for <APPLET/>"), 3)
+        self.seocheckmanager.append(SEOCheckNotExist("iframe", "src", "(.+)", "Missing SRC attribute for <IFRAME/>"), 3)
         # I / B
         self.seocheckmanager.append(SEOCheckNotExist("i , b", "class", "(^| )(glyphicon)($| )", "Recommended: use <strong/> and <em/> instead of <i/> and <b/>"), 2)
     
@@ -146,9 +147,9 @@ class WebSite:
         t_brokenlinks = Test("Broken links", "Broken links affects your ranking", 0)
         t_brokenlinks_in = Test("Broken links in", "Broken links have been detected in the following webpages", 0)
         t_brokenressources_in = Test("Broken ressources in", "Broken ressources (image source, js script, css stylesheets) have been detected in the following webpages", 0)
-        t_duplicated_title = Test("Duplicated Title (on pages to be indexed)", "Webpages with identical titles are very harmful for the ranking", 0)
-        t_duplicated_description = Test("Duplicated Description (on pages to be indexed)", "Webpages with identical descriptions are very harmul for the ranking", 0)
-        t_internal_external_links = Test("Too many external links", "Some people believe that the number of external links should be inferior to the number of internal links. Choose your links properly in order to avoid becoming a directory for websites. You can also use rel='nofollow' attribute in order do remove their effects on your ranking", 1)
+        t_duplicated_title = Test("Duplicated Title (on pages to be indexed)", "Webpages with identical titles are very harmful for the ranking", 1)
+        t_duplicated_description = Test("Duplicated Description (on pages to be indexed)", "Webpages with identical descriptions are very harmul for the ranking", 1)
+        t_internal_external_links = Test("Too many external links", "Some people believe that the number of external links should be inferior to the number of internal links. Choose your links properly in order to avoid becoming a directory for websites. You can also use rel='nofollow' attribute in order do remove their effects on your ranking", 3)
 
         for webpage in self.webpages:
             if webpage.status not in (200, 301, 302):
@@ -167,6 +168,8 @@ class WebSite:
         tests.append(t_brokenlinks)
         tests.append(t_brokenlinks_in)
         tests.append(t_brokenressources_in)
+        tests.append(t_duplicated_title)
+        tests.append(t_duplicated_description)
         tests.append(t_internal_external_links)
 
         # SEOCheck - local checks
@@ -184,4 +187,19 @@ class WebSite:
                 if not check.check(check_dict):
                     t_check.append(webpage)
             tests.append(t_check)
+
+        # Display results
+
+        failed_tests = list()
+        passed_tests = list()
+
+        for t in tests:
+            if t.get_passed():
+                passed_tests.append(t)
+            else:
+                failed_tests.append(t)
+        
+        print ""
+        sprinter = StandardPrinter()
+        sprinter.render(self.webpages, failed_tests, passed_tests)
 

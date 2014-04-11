@@ -21,7 +21,7 @@ class WebPageNode:
         return self.tag_
     
     def get_attrs(self):
-        return dict(self.attrs_)
+        return self.attrs_
     
     def get_data(self):
         return self.data_
@@ -100,10 +100,12 @@ class WebPageNode:
             pass
 
         regex_tag = re.compile(r'^([^\.\[\]#]*)')
-        regex_id = re.compile(r'#([^\.\[\]#]*)')
-        regex_class = re.compile(r'\.([^\.\[\]#]*)')
+        regex_id = re.compile(r'(^|[^\.\[\]#\'"=])#([^\.\[\]#]*)')
+        regex_class = re.compile(r'(^|[^\.\[\]#\'"=])\.([^\.\[\]#]*)')
         regex_attr = re.compile(r'\[([^\.\[\]#=\*~\|\^$]*)([\*~\|\^$]?="([^"]*)"|[\*~\|\^$]?=\'([^\']*)\'|[\*~\|\^$]?=([^\]]+)|)\]') 
-        
+        # Artifacts before . or # in regex_id and regex_class have been added in an attempt to be able to catch "a[href='#']" properly
+        # it was considered as: id=' and href=#
+
         query_elts = list()
         query_raw_elts = css_selector_query.split(' ');
         for raw_elt in query_raw_elts:
@@ -121,10 +123,10 @@ class WebPageNode:
             attrs = dict()
             m = regex_id.search(raw_elt)
             if m:
-                attrs["id"] = {"value": m.group(1), "type": "="}
+                attrs["id"] = {"value": m.group(2), "type": "="}
             m = regex_class.search(raw_elt)
             if m:
-                attrs["class"] = {"value": m.group(1), "type": "="}
+                attrs["class"] = {"value": m.group(2), "type": "="}
 
             # Attribute
             m = regex_attr.findall(raw_elt)
@@ -307,7 +309,7 @@ class WebPageNode:
         for k in WebPageNode.previous_results.keys():
             if k.startswith("find-"):
                 del WebPageNode.previous_results[k]
-
+        
         return output
 
     def append_child(self, tag, attrs):
@@ -360,6 +362,7 @@ class WebPageParser(HTMLParser):
         result = list()
         for root_node in source_list:
             result += root_node.find(query_elts)
+        
         return result
     
     def free_selector(self):

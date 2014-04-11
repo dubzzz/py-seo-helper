@@ -27,6 +27,12 @@ class Test:
 
     def get_level(self):
         return self.level_
+    
+    def get_level_str(self):
+        severities = ["Critical", "High", "Medium", "Low"]
+        if self.level_ >= 0 and self.level_ < 4:
+            return severities[self.level_]
+        return "Unknown"
 
     def get_passed(self):
         return self.passed_
