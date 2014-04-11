@@ -93,7 +93,7 @@ class WebSite:
             wp.add_link_used_by(from_wp)
         return wp
     
-    def scan(self, max_depth, email_address, nofollow, noindex, color):
+    def scan(self, max_depth, email_address, nofollow, noindex, deep, color):
         """
         Scan the WebSite in order to report abnormal or non-optimal
         coding choices
@@ -116,7 +116,7 @@ class WebSite:
         while cursor_webpages_pos < len(self.webpages) and self.webpages[cursor_webpages_pos].depth <= max_depth:
             # remove and return the head of the queue
             webpage = self.webpages[cursor_webpages_pos]
-            webpage.scan(self, self.seocheckmanager, noindex, nofollow)
+            webpage.scan(self, self.seocheckmanager, noindex, nofollow, deep)
             
             cursor_webpages_pos += 1
         

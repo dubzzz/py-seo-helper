@@ -32,13 +32,17 @@ DESCRIPTION
     
     -m [me@domain.com], --email=[me@domain.com]
         Specify the email address of the user that should received the PDF report. Not specified implies no email, but PDF generation in ./output/pdf.pdf.
-    
+
+    -a, --deep
+        Deep analysis. Instead of asking only for the header of external webpages (default behaviour), it will ask the complete webpage.
+        This kind of analysis will certainly be a bit longer. It allows to follow redirections and check whether or not the targetted element is accessible.
+
     -c, --color
         Colored output. Default: no-colors.
 """
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "dum:hc", ["max-depth=", "url=", "help", "nofollow", "noindex", "email=", "color"])
+    opts, args = getopt.getopt(sys.argv[1:], "dum:hca", ["max-depth=", "url=", "help", "nofollow", "noindex", "email=", "color", "deep"])
 except getopt.GetoptError as err:
     print help_content
     print(str(err))
@@ -50,6 +54,7 @@ nofollow = False
 noindex = False
 email_address = None
 color = False
+deep = False
 
 for opt, arg in opts:
     if opt in ("-h", "--help"):
@@ -76,6 +81,8 @@ for opt, arg in opts:
         email_address = arg
     elif opt in ("-c", "--color"):
         color = True
+    elif opt in ("-a", "--deep"):
+        deep = True
 
 if not url:
     print "MISSING PARAMETER: url\n"
@@ -85,5 +92,5 @@ if not url:
 del help_content
 
 website = WebSite(url)
-website.scan(max_depth, email_address, nofollow, noindex, color)
+website.scan(max_depth, email_address, nofollow, noindex, deep, color)
 

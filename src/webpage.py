@@ -77,7 +77,10 @@ class WebPage:
     def check_failures(func):
         def inner(*args, **kwargs):
             output = func(*args, **kwargs)
+            
             self = args[0]
+            print "depth=%d, url=%s [%s][%d]" % (self.depth, self.url, self.content_type, self.status)
+            
             if self.status not in (200, 301, 302):
                 for wp in self.link_used_by:
                     wp.has_brokenlinks = True
@@ -87,7 +90,7 @@ class WebPage:
         return inner
 
     @check_failures
-    def scan(self, website, seocheckmanager, noindex, nofollow):
+    def scan(self, website, seocheckmanager, noindex, nofollow, deep):
         """
         Scan the webpage
         looking for relationships with other pages
@@ -122,14 +125,21 @@ class WebPage:
             pass
         except ValueError:
             pass
-        print "depth=%d, url=%s [%s][%d]" % (self.depth, self.url, self.content_type, self.status)
         
         # Not a success
         # or external page
-        if self.status != 200 or not self.internal or "text/html" not in self.content_type:
-            return
+        if deep:
+            if not self.content_type: # if content-type is not defined for deep analysis: full request
+                pass
+            elif self.status not in (200, 301, 302) or "text/html" not in self.content_type:
+                return
+        else:
+            if self.status != 200 or not self.internal or not self.content_type or "text/html" not in self.content_type:
+                return
         
         try:
+            self.status = 0
+            self.content_length = None
             webpage_query = requests.get(self.url, timeout=10)
         except requests.ConnectionError:
             self.server_unreachable = True
@@ -141,6 +151,12 @@ class WebPage:
             self.server_invalid_query = True
             return
         
+        if not self.content_type:
+            if webpage_query.headers['content-type']:
+                m = re.search(r'[a-zA-Z\.0-9-]+/[a-zA-Z\.0-9-]+', webpage_query.headers['content-type'])
+                if m:
+                    self.content_type = m.group(0)
+
         # Status can change when we run a get query
         # eg. 500 status can be caused by a programming error that cancels the generation of the page
         self.status = webpage_query.status_code
@@ -151,6 +167,10 @@ class WebPage:
         # The value returned by a server during head/get query for non-static files is not good (except on custom configurations of Apache)
         self.content_length = len(webpage_query.text)
         
+        # Stop there for external webpages and deep analysis
+        if not self.internal:
+            return
+
         # Analyse the source code of the webpage
         
         webpageparser = WebPageParser()
