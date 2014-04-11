@@ -88,93 +88,87 @@ class WebPage:
                     wp.has_brokenressources = True
             return output
         return inner
+    
+    def carryout_request(self, full_request, num_retry=0):
+        """
+        Try to get the webpage content/header of self.url
 
-    @check_failures
-    def scan(self, website, seocheckmanager, noindex, nofollow, deep):
-        """
-        Scan the webpage
-        looking for relationships with other pages
+        full_request  : content
+        ! full_request: header
+
+        It will retry num_retry times before stopping. The maximum number of tries is num_retry +1
         """
         
-        self.link_towards_ext = list()
-        self.link_towards_int = list()
-        self.ressource_from = list()
+        retry = 0
+        webpage = None
         
-        try:
-            webpage_head = requests.head(self.url, timeout=10)
-        except requests.ConnectionError:
-            self.server_unreachable = True
-            return
-        except requests.exceptions.Timeout:
-            self.server_unreachable = True
-            return
-        except requests.exceptions.InvalidSchema:
-            self.server_invalid_query = True
-            return
-         
-        # 200: OK
-        # 301: moved permanently
-        self.status = webpage_head.status_code
-        if webpage_head.headers['content-type']:
-            m = re.search(r'[a-zA-Z\.0-9-]+/[a-zA-Z\.0-9-]+', webpage_head.headers['content-type'])
+        while retry <= num_retry and not webpage:
+            retry += 1
+            print "Try #%d: %s" % (retry, self.url)
+            self.server_unreachable = False
+            self.server_invalid_query = False
+            try:
+                if full_request:
+                    webpage = requests.get(self.url, timeout=10)
+                else:
+                    webpage = requests.head(self.url, timeout=10)
+            except requests.ConnectionError:
+                self.server_unreachable = True
+                wbepage = None
+            except requests.exceptions.Timeout:
+                self.server_unreachable = True
+                webpage = None
+            except requests.HTTPError:
+                self.server_invalid_query = True
+                webpage = False
+            except requests.exceptions.TooManyRedirects:
+                self.server_invalid_query = True
+                return None
+            except requests.exceptions.InvalidSchema:
+                self.server_invalid_query = True
+                return None
+
+        if not webpage:
+            return None
+        
+        # Status
+        self.status = webpage.status_code
+        
+        # Content-type
+        if webpage.headers['content-type']:
+            m = re.search(r'[a-zA-Z\.0-9-]+/[a-zA-Z\.0-9-]+', webpage.headers['content-type'])
             if m:
                 self.content_type = m.group(0)
-        try:
-            self.content_length = int(webpage_head.headers['content-length'])
-        except TypeError:
-            pass
-        except ValueError:
-            pass
-        
-        # Not a success
-        # or external page
-        if deep:
-            if not self.content_type: # if content-type is not defined for deep analysis: full request
-                pass
-            elif self.status not in (200, 301, 302) or "text/html" not in self.content_type:
-                return
-        else:
-            if self.status != 200 or not self.internal or not self.content_type or "text/html" not in self.content_type:
-                return
-        
-        try:
-            self.status = 0
-            self.content_length = None
-            webpage_query = requests.get(self.url, timeout=10)
-        except requests.ConnectionError:
-            self.server_unreachable = True
-            return
-        except requests.exceptions.Timeout:
-            self.server_unreachable = True
-            return
-        except requests.exceptions.InvalidSchema:
-            self.server_invalid_query = True
-            return
-        
-        if not self.content_type:
-            if webpage_query.headers['content-type']:
-                m = re.search(r'[a-zA-Z\.0-9-]+/[a-zA-Z\.0-9-]+', webpage_query.headers['content-type'])
-                if m:
-                    self.content_type = m.group(0)
 
-        # Status can change when we run a get query
-        # eg. 500 status can be caused by a programming error that cancels the generation of the page
-        self.status = webpage_query.status_code
-        if self.status != 200:
-            return
-        
+        # Content-length
         # The best way to get the real value of content-length is to compute it from the data
         # The value returned by a server during head/get query for non-static files is not good (except on custom configurations of Apache)
-        self.content_length = len(webpage_query.text)
-        
-        # Stop there for external webpages and deep analysis
-        if not self.internal:
-            return
+        if full_request:
+            self.content_length = len(webpage.text)
+        else:
+            try:
+                self.content_length = int(webpage.headers['content-length'])
+            except TypeError:
+                pass
+            except ValueError:
+                pass
 
-        # Analyse the source code of the webpage
+        return webpage
+    
+    def sourcecode_analysis(self, html_code, website, seocheckmanager, nofollow, noindex):
+        """
+        Analyse the source code of the webpage
+        in order to give relevant details concerning ways to improve the ranking of the website
+
+        This analysis focus on:
+        + Gathering data for SEOChecks
+        + Adding probes in order to check the availability of ressources (images, favicons, iframes, applets, stylesheets or js scripts)
+        + Adding probes to crawl pages that are directly linked to this one
+        + Getting title and description to find possible duplicates beween different pages
+        """
         
         webpageparser = WebPageParser()
-        webpageparser.feed(webpage_query.text)
+        webpageparser.feed(html_code)
         
         # SEOCheckManager
         self.check_dict = seocheckmanager.generate_webpage_check_dict(webpageparser)
@@ -269,7 +263,50 @@ class WebPage:
                     WebPage.descriptions_seen[description_digest].duplicated_description = True
                 else:
                     WebPage.descriptions_seen[description_digest] = self
+
+    @check_failures
+    def scan(self, website, seocheckmanager, noindex, nofollow, deep, num_retry):
+        """
+        Scan the webpage
+        looking for relationships with other pages
+        """
         
+        self.link_towards_ext = list()
+        self.link_towards_int = list()
+        self.ressource_from = list()
+        
+        webpage_header = self.carryout_request(False, num_retry)
+        if not webpage_header:
+            return
+
+        # Not a success
+        # or external page
+        if deep:
+            if not self.content_type: # if content-type is not defined for deep analysis: full request
+                pass
+            elif self.status not in (200, 301, 302) or "text/html" not in self.content_type:
+                return
+        else:
+            if self.status != 200 or not self.internal or not self.content_type or "text/html" not in self.content_type:
+                return
+        
+        self.status = 0
+        self.content_length = None
+        webpage_query = self.carryout_request(True, num_retry)
+        if not webpage_query:
+            return
+        
+        # Status can change when we run a get query
+        # eg. 500 status can be caused by a programming error that cancels the generation of the page
+        if self.status != 200:
+            return
+        
+        # Stop there for external webpages and deep analysis
+        if not self.internal:
+            return
+
+        self.sourcecode_analysis(webpage_query.text, website, seocheckmanager, nofollow, noindex)
+        return
 
     def get_check_dict(self):
         return self.check_dict

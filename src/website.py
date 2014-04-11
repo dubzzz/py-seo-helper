@@ -6,6 +6,12 @@ from seocheckmanager import SEOCheckManager
 from outputprinter import StandardPrinter, PDFPrinter
 from test import Test
 
+def get_key_or_default(dictionary, key, default=None):
+    try:
+        return dictionary[key]
+    except KeyError:
+        return default
+
 class WebSite:
     
     def __init__(self, start_url):
@@ -93,12 +99,20 @@ class WebSite:
             wp.add_link_used_by(from_wp)
         return wp
     
-    def scan(self, max_depth, email_address, nofollow, noindex, deep, color):
+    def scan(self, parameters):
         """
         Scan the WebSite in order to report abnormal or non-optimal
         coding choices
         """
         
+        email_address = get_key_or_default(parameters, "email")
+        nofollow = get_key_or_default(parameters, "nofollow", False)
+        noindex = get_key_or_default(parameters, "noindex", False)
+        deep = get_key_or_default(parameters, "deep", False)
+        num_retry = get_key_or_default(parameters, "num-retry", 0)
+        max_depth = get_key_or_default(parameters, "max-depth", 5)
+        color = get_key_or_default(parameters, "color", False)
+
         # webpages contains the list of known pages
         # pages that have been or should be seen during scan
         # for max_depth=+infinity
@@ -116,7 +130,7 @@ class WebSite:
         while cursor_webpages_pos < len(self.webpages) and self.webpages[cursor_webpages_pos].depth <= max_depth:
             # remove and return the head of the queue
             webpage = self.webpages[cursor_webpages_pos]
-            webpage.scan(self, self.seocheckmanager, noindex, nofollow, deep)
+            webpage.scan(self, self.seocheckmanager, noindex, nofollow, deep, num_retry)
             
             cursor_webpages_pos += 1
         

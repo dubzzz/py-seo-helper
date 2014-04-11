@@ -37,25 +37,22 @@ DESCRIPTION
         Deep analysis. Instead of asking only for the header of external webpages (default behaviour), it will ask the complete webpage.
         This kind of analysis will certainly be a bit longer. It allows to follow redirections and check whether or not the targetted element is accessible.
 
+    -n, --retry=[num-retry]
+        Specify the number of times to retry queries before failing.
+
     -c, --color
         Colored output. Default: no-colors.
 """
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "dum:hca", ["max-depth=", "url=", "help", "nofollow", "noindex", "email=", "color", "deep"])
+    opts, args = getopt.getopt(sys.argv[1:], "dumn:hca", ["max-depth=", "retry=", "url=", "help", "nofollow", "noindex", "email=", "color", "deep"])
 except getopt.GetoptError as err:
     print help_content
     print(str(err))
     sys.exit(0x0001)
 
 url = None
-max_depth = 5
-nofollow = False
-noindex = False
-email_address = None
-color = False
-deep = False
-
+parameters = dict()
 for opt, arg in opts:
     if opt in ("-h", "--help"):
         print help_content
@@ -64,7 +61,7 @@ for opt, arg in opts:
         url = arg
     elif opt in ("-d", "--max-depth"):
         try:
-            max_depth = int(arg)
+            parameters["max-depth"] = int(arg)
         except ValueError:
             print "INVALID PARAMETER for max-depth: MUST BE an INTEGER\n"
             print help_content
@@ -74,15 +71,26 @@ for opt, arg in opts:
             print help_content
             sys.exit(1)
     elif opt in ("--nofollow"):
-        nofollow = True
+        parameters["nofollow"] = True
     elif opt in ("--noindex"):
-        noindex = True
+        parameters["noindex"] = True
     elif opt in ("-e", "--email"):
-        email_address = arg
+        parameters["email"] = arg
     elif opt in ("-c", "--color"):
-        color = True
+        parameters["color"] = True
     elif opt in ("-a", "--deep"):
-        deep = True
+        parameters["deep"] = True
+    elif opt in ("-n", "--retry"):
+        try:
+            parameters["num-retry"] = int(arg)
+        except ValueError:
+            print "INVALID PARAMETER for retry: MUST BE an INTEGER\n"
+            print help_content
+            sys.exit(1)
+        except TypeError:
+            print "INVALID PARAMETER for retry: MUST BE an INTEGER\n"
+            print help_content
+            sys.exit(1)
 
 if not url:
     print "MISSING PARAMETER: url\n"
@@ -92,5 +100,5 @@ if not url:
 del help_content
 
 website = WebSite(url)
-website.scan(max_depth, email_address, nofollow, noindex, deep, color)
+website.scan(parameters)
 
