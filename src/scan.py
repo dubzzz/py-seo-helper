@@ -45,7 +45,7 @@ DESCRIPTION
 """
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "dumn:hca", ["max-depth=", "retry=", "url=", "help", "nofollow", "noindex", "email=", "color", "deep"])
+    opts, args = getopt.getopt(sys.argv[1:], "d:u:m:n:hca", ["max-depth=", "retry=", "url=", "help", "nofollow", "noindex", "email=", "color", "deep"])
 except getopt.GetoptError as err:
     print help_content
     print(str(err))
