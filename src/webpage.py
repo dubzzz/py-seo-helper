@@ -135,10 +135,13 @@ class WebPage:
         self.status = webpage.status_code
         
         # Content-type
-        if webpage.headers['content-type']:
-            m = re.search(r'[a-zA-Z\.0-9-]+/[a-zA-Z\.0-9-]+', webpage.headers['content-type'])
-            if m:
-                self.content_type = m.group(0)
+        try:
+            if webpage.headers['content-type']:
+                m = re.search(r'[a-zA-Z\.0-9-]+/[a-zA-Z\.0-9-]+', webpage.headers['content-type'])
+                if m:
+                    self.content_type = m.group(0)
+        except KeyError:
+            pass
 
         # Content-length
         # The best way to get the real value of content-length is to compute it from the data
@@ -152,6 +155,8 @@ class WebPage:
                 pass
             except ValueError:
                 pass
+            except KeyError:
+                   pass
 
         return webpage
     
